@@ -22,3 +22,8 @@ time_elapsed_tibble <- tibble(
 # Print the tibble
 print(time_elapsed_tibble)
 
+# For the time being, the script with the parallel computing is the fastest
+# method, and is almost 10 seconds faster than the "normal" loop method. I have
+# yet not completed the last step, which is to split the M-simulations in the
+# MTweedieTests in more than one core.
+
