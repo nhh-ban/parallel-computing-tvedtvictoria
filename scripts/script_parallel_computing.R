@@ -1,6 +1,8 @@
+
 # Assignment 1:  
-library(tweedie) 
+library(tweedie)
 library(ggplot2)
+library(doParallel)
 
 simTweedieTest <-  
   function(N){ 
@@ -8,14 +10,14 @@ simTweedieTest <-
       rtweedie(N, mu=10000, phi=100, power=1.9), 
       mu=10000 
     )$p.value 
-  } 
+  }
 
 
 # Assignment 2:  
 MTweedieTests <-  
   function(N,M,sig){ 
     sum(replicate(M,simTweedieTest(N)) < sig)/M 
-  } 
+  }
 
 
 # Assignment 3:  
@@ -23,22 +25,37 @@ df <-
   expand.grid( 
     N = c(10,100,1000,5000, 10000), 
     M = 1000, 
-    share_reject = NA) 
+    share_reject = NA)
 
+# Create a cluster for parallel processing
+cl <- makeCluster(detectCores())
 
-for(i in 1:nrow(df)){ 
-  df$share_reject[i] <-  
-    MTweedieTests( 
-      N=df$N[i], 
-      M=df$M[i], 
-      sig=.05) 
-} 
+# Register the cluster
+registerDoParallel(cl)
+
+result <- foreach(
+  i=1:nrow(df),
+  .combine = "rbind",
+  .packages = c("tweedie", "tibble")
+) %dopar% {
+  tibble(
+    N = df$N[i],
+    M = df$M[i],
+    share_reject = MTweedieTests(N = df$N[i], M = df$M[i], sig = 0.05)
+  )
+}
+
+# Combine the results into a final dataframe
+final_df <- do.call(rbind, result)
+
+# Stop the cluster
+stopCluster(cl)
 
 
 
 
 ## Assignemnt 4 
-   
+
 # This is one way of solving it - maybe you have a better idea? 
 # First, write a function for simulating data, where the "type" 
 # argument controls the distribution. We also need to ensure 
